@@ -1,1 +1,1607 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gênio Quiz: Linguagens</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Fredoka & Nunito para estética clássica de Quiz -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Tone.js para efeitos sonoros sintetizados sem URLs externas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
+  <style>
+    /* Configurações base e bloqueio de rolagem para 100vw x 100vh */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Nunito', sans-serif;
+      background-color: #ffffff;
+      color: #1e293b;
+    }
+
+    h1, h2, .font-display {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Padrão sutil de papel quadriculado/pontilhado estilo caderno/Gênio Quiz */
+    .bg-genio-pattern {
+      background-color: #ffffff;
+      background-image: radial-gradient(#cbd5e1 1.25px, transparent 1.25px);
+      background-size: 22px 22px;
+    }
+
+    /* Estilização dos botões estilo Gênio Quiz (bordas marcantes, sombra sólida 3D) */
+    .btn-genio {
+      border: 3px solid #1e293b;
+      box-shadow: 0 5px 0 #1e293b;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
+    }
+
+    .btn-genio:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 0 #1e293b;
+    }
+
+    .btn-genio:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #1e293b;
+    }
+
+    /* Retângulos de resposta: perfeitamente alinhados, mesma altura e largura */
+    .option-card {
+      border: 3px solid #1e293b;
+      box-shadow: 0 4px 0 #1e293b;
+      background-color: #ffffff;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      height: 100%;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .option-card:hover:not(:disabled) {
+      background-color: #f8fafc;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #1e293b;
+    }
+
+    .option-card:active:not(:disabled) {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1e293b;
+    }
+
+    .option-correct {
+      background-color: #22c55e !important;
+      color: #ffffff !important;
+      border-color: #14532d !important;
+      box-shadow: 0 4px 0 #14532d !important;
+    }
+
+    .option-wrong {
+      background-color: #ef4444 !important;
+      color: #ffffff !important;
+      border-color: #7f1d1d !important;
+      box-shadow: 0 4px 0 #7f1d1d !important;
+    }
+
+    /* Animações */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    .animate-shake {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .animate-pop {
+      animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes rotatePhone {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-90deg); }
+    }
+
+    .animate-phone {
+      animation: rotatePhone 2s infinite ease-in-out;
+    }
+
+    /* Aviso obrigatório para modo retrato em dispositivos móveis/telas estreitas */
+    #portrait-warning {
+      display: none;
+    }
+
+    @media screen and (orientation: portrait) and (max-width: 900px) {
+      #portrait-warning {
+        display: flex !important;
+      }
+      #app-container {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-genio-pattern">
+
+  <!-- AVISO DE MODO PAISAGEM (Exibido automaticamente se o celular estiver em pé / retrato) -->
+  <div id="portrait-warning" class="fixed inset-0 z-50 bg-amber-400 flex-col items-center justify-center p-6 text-center">
+    <div class="bg-white border-4 border-slate-900 rounded-3xl p-8 max-w-sm shadow-[0_8px_0_#0f172a] flex flex-col items-center">
+      <!-- Ícone SVG de celular girando -->
+      <svg class="w-20 h-20 text-slate-900 mb-4 animate-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="2" width="12" height="20" rx="2" ry="2"></rect>
+        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+      </svg>
+      <h2 class="text-2xl font-bold text-slate-900 mb-2">Gire o seu celular!</h2>
+      <p class="text-slate-700 font-semibold text-base">
+        Este jogo foi criado para ser jogado na <span class="text-blue-600 font-extrabold">horizontal (modo paisagem)</span>, igual ao Gênio Quiz!
+      </p>
+    </div>
+  </div>
+
+  <!-- CONTAINER PRINCIPAL DO JOGO (100vw x 100vh) -->
+  <div id="app-container" class="w-screen h-screen flex flex-col justify-between overflow-hidden relative">
+
+    <!-- ==================== 1. TELA INICIAL ==================== -->
+    <section id="screen-home" class="w-full h-full flex flex-col items-center justify-between py-3 px-6 md:py-5 md:px-12">
+      
+      <!-- Topo: Barra de configurações rápidas (Som e Modo Treino) -->
+      <div class="w-full flex items-center justify-between">
+        <div class="flex items-center gap-2 bg-white border-2 border-slate-900 rounded-full px-3 py-1 shadow-[0_2px_0_#0f172a]">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+          <span class="text-xs md:text-sm font-extrabold text-slate-800">90 Questões • 3 Níveis</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Toggle Modo Treino -->
+          <button id="btn-toggle-practice" onclick="togglePracticeMode()" class="btn-genio bg-white text-slate-800 px-3 py-1.5 rounded-full text-xs md:text-sm font-extrabold flex items-center gap-1.5">
+            <span id="practice-indicator" class="w-3 h-3 rounded-full bg-slate-300 border border-slate-700"></span>
+            <span>Modo Treino: <strong id="practice-status-text">OFF</strong></span>
+          </button>
+
+          <!-- Botão Som -->
+          <button id="btn-sound" onclick="toggleSound()" class="btn-genio bg-amber-300 text-slate-900 p-2 rounded-full" title="Ativar/Desativar Som">
+            <svg id="icon-sound-on" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+            <svg id="icon-sound-off" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Centro: Logo e Título Estilo Gênio Quiz -->
+      <div class="flex flex-col items-center text-center my-auto">
+        <div class="inline-flex items-center gap-2 bg-blue-600 text-white border-3 border-slate-900 px-4 py-1 rounded-full text-xs md:text-sm font-extrabold uppercase tracking-wider mb-1 shadow-[0_3px_0_#0f172a]">
+          Desafio Educacional • Dia 1
+        </div>
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 tracking-tight leading-none drop-shadow-[0_3px_0_rgba(0,0,0,0.12)]">
+          Gênio Quiz<span class="text-blue-600">:</span> <span class="text-amber-500">Linguagens</span>
+        </h1>
+        <p class="text-slate-600 font-bold text-xs sm:text-sm md:text-base mt-1.5 max-w-xl">
+          30 questões por nível • 10 Português • 10 Redação • 10 Inglês
+        </p>
+      </div>
+
+      <!-- Base: Botões Grandes de Dificuldade -->
+      <div class="w-full max-w-4xl grid grid-cols-3 gap-3 md:gap-6 pb-1">
+        <!-- Nível Fácil -->
+        <button onclick="startGame('facil')" class="btn-genio bg-emerald-400 hover:bg-emerald-300 text-slate-950 rounded-2xl py-3 px-4 md:py-4 flex flex-col items-center justify-center">
+          <span class="text-xl sm:text-2xl md:text-3xl font-display font-bold">FÁCIL</span>
+          <span class="text-[11px] md:text-xs font-extrabold bg-white/80 px-2.5 py-0.5 rounded-full mt-1 border border-slate-900">
+            30 Questões
+          </span>
+        </button>
+
+        <!-- Nível Médio -->
+        <button onclick="startGame('medio')" class="btn-genio bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-2xl py-3 px-4 md:py-4 flex flex-col items-center justify-center">
+          <span class="text-xl sm:text-2xl md:text-3xl font-display font-bold">MÉDIO</span>
+          <span class="text-[11px] md:text-xs font-extrabold bg-white/80 px-2.5 py-0.5 rounded-full mt-1 border border-slate-900">
+            30 Questões
+          </span>
+        </button>
+
+        <!-- Nível Difícil -->
+        <button onclick="startGame('dificil')" class="btn-genio bg-rose-500 hover:bg-rose-400 text-white rounded-2xl py-3 px-4 md:py-4 flex flex-col items-center justify-center">
+          <span class="text-xl sm:text-2xl md:text-3xl font-display font-bold">DIFÍCIL</span>
+          <span class="text-[11px] md:text-xs font-extrabold bg-slate-900/30 text-white px-2.5 py-0.5 rounded-full mt-1 border border-slate-900">
+            30 Questões
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== 2. TELA DE JOGO (PAISAGEM ESTILO GÊNIO QUIZ) ==================== -->
+    <section id="screen-game" class="hidden w-full h-full flex-col justify-between py-2.5 px-4 sm:px-8 md:py-4 md:px-12">
+      
+      <!-- TOPO: Número em círculo estilo Gênio Quiz, Matéria, Nível e Menu -->
+      <header class="w-full flex items-center justify-between gap-2 shrink-0">
+        <!-- Esquerda: Círculo do número da questão + Tag da Matéria -->
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <div id="question-number-badge" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-amber-400 border-3 border-slate-900 shadow-[0_3px_0_#0f172a] flex items-center justify-center font-display font-bold text-lg sm:text-xl text-slate-900 shrink-0">
+            1
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span id="subject-badge" class="px-2.5 py-0.5 rounded-lg border-2 border-slate-900 text-xs sm:text-sm font-extrabold uppercase tracking-wide bg-blue-100 text-blue-900">
+                Português
+              </span>
+              <span id="difficulty-badge" class="px-2 py-0.5 rounded-lg border-2 border-slate-900 text-[11px] sm:text-xs font-extrabold uppercase bg-slate-100 text-slate-800">
+                Fácil
+              </span>
+            </div>
+            <span id="progress-text" class="text-[11px] sm:text-xs font-bold text-slate-500 mt-0.5">
+              Questão 1 de 30 • Bloco 1/10
+            </span>
+          </div>
+        </div>
+
+        <!-- Centro: Barra de progresso visual -->
+        <div class="hidden sm:flex flex-1 max-w-xs md:max-w-md mx-4 bg-slate-200 h-3.5 rounded-full border-2 border-slate-900 overflow-hidden">
+          <div id="progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 3.33%"></div>
+        </div>
+
+        <!-- Direita: Status (Modo Treino ou Vidas) + Botão Voltar -->
+        <div class="flex items-center gap-2">
+          <div id="hud-score-box" class="bg-white border-2 border-slate-900 rounded-xl px-2.5 py-1 text-xs sm:text-sm font-extrabold text-slate-800 shadow-[0_2px_0_#0f172a]">
+            Acertos: <span id="hud-hits" class="text-emerald-600">0</span>
+          </div>
+          <button onclick="confirmReturnMenu()" class="btn-genio bg-slate-100 hover:bg-slate-200 text-slate-900 px-3 py-1 rounded-xl text-xs sm:text-sm font-extrabold">
+            Menu
+          </button>
+        </div>
+      </header>
+
+      <!-- PARTE SUPERIOR CENTRAL: Enunciado da Pergunta -->
+      <div class="w-full max-w-5xl mx-auto flex-1 flex items-center justify-center my-1.5 sm:my-2 px-2">
+        <div class="w-full bg-white border-3 border-slate-900 rounded-2xl px-4 py-2.5 sm:px-6 sm:py-3.5 shadow-[0_4px_0_#0f172a] flex items-center justify-center min-h-[68px] sm:min-h-[84px]">
+          <h2 id="question-text" class="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-slate-900 text-center leading-snug">
+            Carregando pergunta...
+          </h2>
+        </div>
+      </div>
+
+      <!-- PARTE DO MEIO/INFERIOR: Exatamente 4 retângulos alinhados e do mesmo tamanho (Grade 2x2) -->
+      <div id="options-grid" class="w-full max-w-5xl mx-auto grid grid-cols-2 grid-rows-2 gap-2.5 sm:gap-4 h-[46%] sm:h-[48%] pb-1 shrink-0">
+        <button type="button" onclick="handleAnswer(0)" id="opt-0" class="option-card rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm md:text-base lg:text-lg font-extrabold text-slate-800 leading-tight">
+          Alternativa A
+        </button>
+        <button type="button" onclick="handleAnswer(1)" id="opt-1" class="option-card rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm md:text-base lg:text-lg font-extrabold text-slate-800 leading-tight">
+          Alternativa B
+        </button>
+        <button type="button" onclick="handleAnswer(2)" id="opt-2" class="option-card rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm md:text-base lg:text-lg font-extrabold text-slate-800 leading-tight">
+          Alternativa C
+        </button>
+        <button type="button" onclick="handleAnswer(3)" id="opt-3" class="option-card rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm md:text-base lg:text-lg font-extrabold text-slate-800 leading-tight">
+          Alternativa D
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== 3. MODAL DE ERRO ESTILO GÊNIO QUIZ ==================== -->
+    <div id="modal-gameover" class="hidden fixed inset-0 z-40 bg-slate-900/75 backdrop-blur-xs items-center justify-center p-4">
+      <div class="bg-white border-4 border-slate-900 rounded-3xl p-5 sm:p-7 max-w-lg w-full shadow-[0_10px_0_#0f172a] text-center animate-pop">
+        <div class="w-14 h-14 mx-auto bg-rose-500 border-3 border-slate-900 rounded-full flex items-center justify-center text-white text-3xl font-display font-bold mb-2 shadow-[0_3px_0_#0f172a]">
+          ✕
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-display font-bold text-rose-600 mb-1">Você errou!</h2>
+        <p id="gameover-detail" class="text-xs sm:text-sm font-bold text-slate-600 mb-3">
+          Você parou na questão 1 de 30.
+        </p>
+
+        <!-- Caixa com a resposta correta para aprendizado -->
+        <div class="bg-amber-50 border-2 border-slate-900 rounded-2xl p-3 mb-4 text-left">
+          <span class="text-[11px] font-extrabold uppercase text-amber-700 block mb-0.5">Resposta Correta:</span>
+          <p id="gameover-correct-answer" class="text-xs sm:text-sm font-extrabold text-slate-900"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="restartCurrentLevel()" class="btn-genio bg-amber-400 hover:bg-amber-300 text-slate-950 py-2.5 px-4 rounded-2xl font-display font-bold text-base sm:text-lg">
+            Recomeçar Nível
+          </button>
+          <button onclick="goToMenu()" class="btn-genio bg-slate-200 hover:bg-slate-300 text-slate-900 py-2.5 px-4 rounded-2xl font-display font-bold text-base sm:text-lg">
+            Menu Inicial
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 4. MODAL DE CONFIRMAÇÃO DE SAÍDA ==================== -->
+    <div id="modal-confirm-menu" class="hidden fixed inset-0 z-40 bg-slate-900/70 items-center justify-center p-4">
+      <div class="bg-white border-4 border-slate-900 rounded-3xl p-6 max-w-md w-full shadow-[0_8px_0_#0f172a] text-center animate-pop">
+        <h3 class="text-xl sm:text-2xl font-display font-bold text-slate-900 mb-2">Voltar ao Menu?</h3>
+        <p class="text-sm font-bold text-slate-600 mb-5">Seu progresso atual neste nível será perdido.</p>
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="closeConfirmMenu()" class="btn-genio bg-emerald-400 text-slate-950 py-2.5 rounded-2xl font-display font-bold text-base">
+            Continuar Jogando
+          </button>
+          <button onclick="goToMenu()" class="btn-genio bg-rose-500 text-white py-2.5 rounded-2xl font-display font-bold text-base">
+            Sair para Menu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 5. TELA DE VITÓRIA (30 QUESTÕES CONCLUÍDAS) ==================== -->
+    <section id="screen-victory" class="hidden w-full h-full flex-col items-center justify-center p-4 sm:p-8 text-center">
+      <div class="bg-white border-4 border-slate-900 rounded-3xl p-5 sm:p-8 max-w-2xl w-full shadow-[0_10px_0_#0f172a] animate-pop">
+        <div class="inline-block bg-emerald-400 border-2 border-slate-900 px-4 py-1 rounded-full text-xs sm:text-sm font-extrabold uppercase text-slate-950 mb-2">
+          Parabéns! Nível Concluído
+        </div>
+        <h2 class="text-3xl sm:text-4xl font-display font-bold text-slate-900 mb-1">
+          Você é um Gênio em Linguagens!
+        </h2>
+        <p id="victory-subtitle" class="text-sm sm:text-base font-bold text-slate-600 mb-4">
+          Você completou todas as 30 questões do nível Fácil!
+        </p>
+
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="bg-blue-50 border-2 border-slate-900 rounded-2xl p-2.5">
+            <span class="text-xs font-extrabold text-blue-700 block">Português</span>
+            <span id="vic-port" class="text-lg sm:text-xl font-display font-bold text-slate-900">10/10</span>
+          </div>
+          <div class="bg-amber-50 border-2 border-slate-900 rounded-2xl p-2.5">
+            <span class="text-xs font-extrabold text-amber-700 block">Redação</span>
+            <span id="vic-red" class="text-lg sm:text-xl font-display font-bold text-slate-900">10/10</span>
+          </div>
+          <div class="bg-purple-50 border-2 border-slate-900 rounded-2xl p-2.5">
+            <span class="text-xs font-extrabold text-purple-700 block">Inglês</span>
+            <span id="vic-ing" class="text-lg sm:text-xl font-display font-bold text-slate-900">10/10</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <button onclick="restartCurrentLevel()" class="btn-genio bg-amber-400 hover:bg-amber-300 text-slate-950 px-6 py-2.5 rounded-2xl font-display font-bold text-base sm:text-lg">
+            Jogar Novamente
+          </button>
+          <button onclick="goToMenu()" class="btn-genio bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-2xl font-display font-bold text-base sm:text-lg">
+            Escolher Outro Nível
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    /**
+     * BANCO DE DADOS COMPLETO COM 90 QUESTÕES (30 FÁCIL, 30 MÉDIO, 30 DIFÍCIL)
+     * Cada nível possui exatamente:
+     * - 10 de Português (Regência verbal e nominal)
+     * - 10 de Redação (Artigo de divulgação científica, Entrevista e Fanfic)
+     * - 10 de Inglês (Direct & Indirect Speech)
+     */
+    const QUIZ_BANK = {
+      facil: [
+        // --- PORTUGUÊS (10 questões) ---
+        {
+          subject: "Português",
+          q: "Qual frase segue a norma culta da regência verbal de 'assistir' no sentido de ver ou presenciar?",
+          correct: "Assistimos ao documentário ontem à noite.",
+          wrong: [
+            "Assistimos o documentário ontem à noite.",
+            "Assistimos no documentário ontem à noite.",
+            "Assistimos do documentário ontem à noite."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual alternativa o verbo 'obedecer' apresenta regência verbal correta?",
+          correct: "Os alunos obedeceram às regras da escola.",
+          wrong: [
+            "Os alunos obedeceram as regras da escola.",
+            "Os alunos obedeceram nas regras da escola.",
+            "Os alunos obedeceram pelas regras da escola."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Assinale a opção em que o verbo 'ir' está empregado de acordo com a regência verbal padrão.",
+          correct: "Ela foi ao cinema com os amigos.",
+          wrong: [
+            "Ela foi no cinema com os amigos.",
+            "Ela foi pelo cinema com os amigos.",
+            "Ela foi sobre o cinema com os amigos."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual frase apresenta a regência verbal correta do verbo 'preferir'?",
+          correct: "Prefiro estudo diário a revisão de última hora.",
+          wrong: [
+            "Prefiro mais estudo diário do que revisão.",
+            "Prefiro estudo diário do que revisão.",
+            "Prefiro mil vezes estudo diário que revisão."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual alternativa o verbo 'namorar' respeita a norma culta quanto ao complemento?",
+          correct: "Lucas namora Marina há dois meses.",
+          wrong: [
+            "Lucas namora com Marina há dois meses.",
+            "Lucas namora a Marina há dois meses.",
+            "Lucas namora para Marina há dois meses."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual é a regência nominal correta do adjetivo 'acessível'?",
+          correct: "O site é acessível a todos os estudantes.",
+          wrong: [
+            "O site é acessível de todos os estudantes.",
+            "O site é acessível com todos os estudantes.",
+            "O site é acessível em todos os estudantes."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Assinale a frase em que a regência nominal do adjetivo 'capaz' está correta.",
+          correct: "Ela é capaz de resolver o problema.",
+          wrong: [
+            "Ela é capaz em resolver o problema.",
+            "Ela é capaz por resolver o problema.",
+            "Ela é capaz com resolver o problema."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa apresenta a regência nominal correta do substantivo 'respeito'?",
+          correct: "O respeito aos colegas fortalece a turma.",
+          wrong: [
+            "O respeito dos colegas fortalece a turma.",
+            "O respeito nos colegas fortalece a turma.",
+            "O respeito sob os colegas fortalece a turma."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual frase a regência nominal do adjetivo 'acostumado' está correta?",
+          correct: "Estou acostumado a acordar cedo.",
+          wrong: [
+            "Estou acostumado de acordar cedo.",
+            "Estou acostumado sobre acordar cedo.",
+            "Estou acostumado por acordar cedo."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa está correta quanto à regência nominal de 'parecido'?",
+          correct: "Esse texto é parecido com o artigo anterior.",
+          wrong: [
+            "Esse texto é parecido do artigo anterior.",
+            "Esse texto é parecido no artigo anterior.",
+            "Esse texto é parecido por o artigo anterior."
+          ]
+        },
+
+        // --- REDAÇÃO (10 questões) ---
+        {
+          subject: "Redação",
+          q: "Qual é o objetivo principal de um artigo de divulgação científica?",
+          correct: "Traduzir conceitos científicos para o público geral com linguagem acessível.",
+          wrong: [
+            "Narrar aventuras fictícias entre personagens de filmes famosos.",
+            "Apresentar apenas perguntas e respostas feitas a um artista.",
+            "Vender equipamentos de laboratório para universidades."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual característica costuma estar presente em um artigo de divulgação científica?",
+          correct: "Explicação de termos técnicos e menção a pesquisas ou dados.",
+          wrong: [
+            "Uso exclusivo de gírias e versos rimados sem comprovação.",
+            "Ausência total de fontes, pesquisadores ou instituições.",
+            "Foco em opiniões pessoais sem relação com estudos."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em uma entrevista, quais são os papéis básicos dos participantes?",
+          correct: "O entrevistador faz perguntas e o entrevistado responde.",
+          wrong: [
+            "Ambos apenas leem um poema em voz alta.",
+            "O entrevistado elabora o roteiro e avalia o entrevistador.",
+            "Ninguém faz perguntas; é apenas um monólogo."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual elemento costuma aparecer na apresentação inicial de uma entrevista publicada?",
+          correct: "Identificação do entrevistado e contextualização do tema.",
+          wrong: [
+            "Apenas uma lista de compras sem mencionar quem fala.",
+            "Bibliografia acadêmica com mais de cinquenta páginas.",
+            "Regras gramaticais sobre conjunções subordinativas."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "O que define uma fanfic (fanfiction)?",
+          correct: "História criada por fãs a partir de universos ou personagens já existentes.",
+          wrong: [
+            "Relatório oficial de um experimento feito em laboratório.",
+            "Notícia policial publicada na primeira página de um jornal.",
+            "Manual técnico de montagem de aparelhos eletrônicos."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual é um traço comum nas narrativas de fanfic?",
+          correct: "Explorar situações alternativas com personagens conhecidos do público.",
+          wrong: [
+            "Proibir qualquer criatividade ou mudança no enredo.",
+            "Usar apenas gráficos estatísticos no lugar de diálogos.",
+            "Ser escrita exclusivamente por órgãos governamentais."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Como geralmente se organiza a estrutura de perguntas e respostas em uma entrevista?",
+          correct: "Em blocos alternados que identificam a fala do entrevistador e do entrevistado.",
+          wrong: [
+            "Em estrofes de quatro versos com rimas obrigatórias.",
+            "Em tabelas numéricas sem nenhuma fala transcrita.",
+            "Em um único parágrafo corrido sem pontuação."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual linguagem costuma predominar em um artigo de divulgação científica?",
+          correct: "Linguagem clara, objetiva e acessível, com explicação de conceitos.",
+          wrong: [
+            "Linguagem cifrada que apenas cientistas conseguem decifrar.",
+            "Linguagem puramente poética cheia de metáforas obscuras.",
+            "Linguagem informal repleta de abreviações de internet."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em uma fanfic, o que significa escrever um cenário alternativo (AU - Alternative Universe)?",
+          correct: "Colocar os personagens em um contexto ou época diferente da obra original.",
+          wrong: [
+            "Copiar palavra por palavra o livro original sem mudar nada.",
+            "Escrever uma resenha crítica apontando erros de impressão.",
+            "Traduzir o roteiro original para outro idioma literalmente."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual atitude ajuda a conduzir uma boa entrevista?",
+          correct: "Preparar perguntas pertinentes e ouvir atentamente as respostas.",
+          wrong: [
+            "Interromper o entrevistado a cada palavra para falar de si.",
+            "Fazer perguntas aleatórias sem relação com o tema.",
+            "Ignorar completamente a área de atuação do entrevistado."
+          ]
+        },
+
+        // --- INGLÊS (10 questões) ---
+        {
+          subject: "Inglês",
+          q: "What is Direct Speech?",
+          correct: "Repeating someone's exact words inside quotation marks.",
+          wrong: [
+            "Summarizing a story without mentioning any speaker.",
+            "Translating a text from English into Portuguese.",
+            "Writing verbs only in the future continuous tense."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "What is Indirect (Reported) Speech?",
+          correct: "Reporting what someone said without using their exact quoted words.",
+          wrong: [
+            "Using quotation marks around every single adjective.",
+            "Speaking directly to a large audience on television.",
+            "Listing irregular verbs in alphabetical order."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Choose the Indirect Speech form of: Ana said, \"I am tired.\"",
+          correct: "Ana said she was tired.",
+          wrong: [
+            "Ana said I am tired.",
+            "Ana said she will be tired.",
+            "Ana said she has tired."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Choose the Indirect Speech form of: Leo said, \"I like pizza.\"",
+          correct: "Leo said he liked pizza.",
+          wrong: [
+            "Leo said he liking pizza.",
+            "Leo said I liked pizza.",
+            "Leo said he is like pizza."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Which reporting verb usually takes a personal object right after it?",
+          correct: "tell (e.g., She told me...)",
+          wrong: [
+            "say (e.g., She said me...)",
+            "speak (e.g., She spoke me...)",
+            "talk (e.g., She talked me...)"
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Choose the correct Indirect Speech: Maya said, \"I can swim.\"",
+          correct: "Maya said she could swim.",
+          wrong: [
+            "Maya said she can swam.",
+            "Maya said I could swim.",
+            "Maya said she must swim."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Which pronoun change fits: Tom said, \"My book is on the desk.\"",
+          correct: "Tom said his book was on the desk.",
+          wrong: [
+            "Tom said my book was on the desk.",
+            "Tom said her book is on the desk.",
+            "Tom said our book was on the desk."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Choose the Indirect Speech form of: Sarah said, \"We are ready.\"",
+          correct: "Sarah said they were ready.",
+          wrong: [
+            "Sarah said we are ready.",
+            "Sarah said they are ready.",
+            "Sarah said she was ready."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Which punctuation mark typically encloses Direct Speech?",
+          correct: "Quotation marks (\" \")",
+          wrong: [
+            "Parentheses ( )",
+            "Semicolons (;)",
+            "Hyphens (-)"
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Choose the Indirect Speech form of: Ben said, \"I play soccer.\"",
+          correct: "Ben said he played soccer.",
+          wrong: [
+            "Ben said he playing soccer.",
+            "Ben said I play soccer.",
+            "Ben said he has play soccer."
+          ]
+        }
+      ],
+
+      medio: [
+        // --- PORTUGUÊS (10 questões) ---
+        {
+          subject: "Português",
+          q: "Analise o verbo 'aspirar' no sentido de 'desejar/almejar' e assinale a frase correta na norma culta.",
+          correct: "Ela aspira ao cargo de diretora.",
+          wrong: [
+            "Ela aspira o cargo de diretora.",
+            "Ela aspira no cargo de diretora.",
+            "Ela aspira pelo cargo de diretora."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual alternativa o verbo 'visar' está empregado no sentido de 'ter como meta/objetivo' segundo a norma culta?",
+          correct: "O projeto visa à melhoria do bairro.",
+          wrong: [
+            "O projeto visa a melhoria do bairro.",
+            "O projeto visa pela melhoria do bairro.",
+            "O projeto visa na melhoria do bairro."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual frase está correta quanto à regência do verbo 'pagar' quando o complemento é a coisa devida?",
+          correct: "Paguei a conta da energia ontem.",
+          wrong: [
+            "Paguei à conta da energia ontem.",
+            "Paguei na conta da energia ontem.",
+            "Paguei da conta da energia ontem."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Assinale a opção em que o verbo 'chegar' respeita a regência verbal padrão.",
+          correct: "Eles chegaram cedo à escola.",
+          wrong: [
+            "Eles chegaram cedo na escola.",
+            "Eles chegaram cedo pela escola.",
+            "Eles chegaram cedo sobre a escola."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa apresenta regência correta do verbo 'esquecer' na forma pronominal ('esquecer-se')?",
+          correct: "Esqueci-me de levar o caderno.",
+          wrong: [
+            "Esqueci-me levar o caderno.",
+            "Esqueci-me em levar o caderno.",
+            "Esqueci-me por levar o caderno."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual frase a regência nominal de 'compatível' está correta?",
+          correct: "Sua atitude não é compatível com o cargo.",
+          wrong: [
+            "Sua atitude não é compatível do cargo.",
+            "Sua atitude não é compatível no cargo.",
+            "Sua atitude não é compatível sob o cargo."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa apresenta regência nominal correta do adjetivo 'avesso'?",
+          correct: "Ele é avesso a discussões longas.",
+          wrong: [
+            "Ele é avesso de discussões longas.",
+            "Ele é avesso com discussões longas.",
+            "Ele é avesso em discussões longas."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual frase a regência nominal de 'dúvida' está bem empregada?",
+          correct: "Tenho dúvida sobre a veracidade do relato.",
+          wrong: [
+            "Tenho dúvida à veracidade do relato.",
+            "Tenho dúvida com a veracidade do relato.",
+            "Tenho dúvida por a veracidade do relato."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa apresenta regência nominal correta do adjetivo 'propenso'?",
+          correct: "A região é propensa a chuvas intensas.",
+          wrong: [
+            "A região é propensa de chuvas intensas.",
+            "A região é propensa com chuvas intensas.",
+            "A região é propensa sob chuvas intensas."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Assinale a frase em que a regência nominal de 'grato' está correta.",
+          correct: "Sou grato a você pela ajuda.",
+          wrong: [
+            "Sou grato de você pela ajuda.",
+            "Sou grato em você pela ajuda.",
+            "Sou grato sob você pela ajuda."
+          ]
+        },
+
+        // --- REDAÇÃO (10 questões) ---
+        {
+          subject: "Redação",
+          q: "Como um artigo de divulgação científica costuma lidar com termos técnicos?",
+          correct: "Explica-os de forma didática, com analogias ou definições simples.",
+          wrong: [
+            "Mantém todos em latim sem nenhuma explicação.",
+            "Substitui todos os termos por gírias humorísticas.",
+            "Apaga os conceitos científicos para virar ficção."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual diferença é comum entre um artigo científico acadêmico e um artigo de divulgação científica?",
+          correct: "O de divulgação visa a um público mais amplo e usa tom menos hermético.",
+          wrong: [
+            "O de divulgação não precisa se basear em ciência.",
+            "O acadêmico é escrito apenas em formato de tirinhas.",
+            "Não há diferença de público nem de linguagem entre eles."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Por que o recorte temático das perguntas importa em uma entrevista?",
+          correct: "Ele orienta o foco e ajuda a extrair informações relevantes do entrevistado.",
+          wrong: [
+            "Serve para confundir o entrevistado e encerrar rápido.",
+            "Impede que o entrevistado fale sobre sua especialidade.",
+            "Torna todas as entrevistas idênticas entre si."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em uma entrevista editada para publicação, o que costuma ocorrer?",
+          correct: "Seleção e organização dos trechos mais relevantes, mantendo fidelidade ao sentido.",
+          wrong: [
+            "Invenção de respostas que o entrevistado nunca deu.",
+            "Troca completa da opinião do entrevistado pelo oposto.",
+            "Publicação de ruídos e pausas sem nenhuma revisão."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "O que caracteriza um 'crossover' em uma fanfic?",
+          correct: "O encontro de personagens ou mundos de duas ou mais obras diferentes.",
+          wrong: [
+            "A exclusão de todos os diálogos da narrativa.",
+            "Um resumo acadêmico sobre direitos autorais.",
+            "A biografia real do autor da obra original."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual é a importância de manter a coerência interna na fanfic?",
+          correct: "Fazer as ações dos personagens parecerem plausíveis dentro das regras da história.",
+          wrong: [
+            "Garantir que o texto tenha exatamente cem palavras.",
+            "Impedir que o leitor sinta empatia pelos personagens.",
+            "Evitar qualquer tipo de conflito ou desenvolvimento."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual recurso ajuda a situar o leitor sobre a relevância de um artigo de divulgação científica?",
+          correct: "Contextualizar o problema ou descoberta e mostrar seu impacto atual.",
+          wrong: [
+            "Começar com uma receita culinária sem relação com o tema.",
+            "Omitir totalmente o resultado da pesquisa.",
+            "Usar apenas siglas desconhecidas no título."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em uma entrevista, qual é a vantagem de fazer perguntas abertas?",
+          correct: "Permitir que o entrevistado desenvolva explicações, exemplos e pontos de vista.",
+          wrong: [
+            "Obrigar o entrevistado a responder apenas 'sim' ou 'não'.",
+            "Reduzir a entrevista a uma única linha de texto.",
+            "Evitar que o entrevistado explique seus argumentos."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual elemento de caracterização de personagem costuma ser trabalhado em uma fanfic?",
+          correct: "Traços de personalidade, motivações e relações com outros personagens.",
+          wrong: [
+            "Apenas o código de barras do livro original.",
+            "Tabelas de preços de ingressos de cinema.",
+            "Fórmulas químicas de reagentes industriais."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em um artigo de divulgação científica, qual é o papel das evidências ou dados citados?",
+          correct: "Sustentar as informações apresentadas e dar credibilidade à explicação.",
+          wrong: [
+            "Enfeitar a página sem nenhuma ligação com o texto.",
+            "Substituir completamente o título e a conclusão.",
+            "Provar que o autor não leu nenhuma pesquisa."
+          ]
+        },
+
+        // --- INGLÊS (10 questões) ---
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: He said, \"I am studying for the test.\"",
+          correct: "He said he was studying for the test.",
+          wrong: [
+            "He said he is studying for the test.",
+            "He said I was studying for the test.",
+            "He said he studied for the test now."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: Clara said, \"I have finished my homework.\"",
+          correct: "Clara said she had finished her homework.",
+          wrong: [
+            "Clara said she has finished my homework.",
+            "Clara said she finished her homework tomorrow.",
+            "Clara said I had finished her homework."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "How does \"now\" typically change in Indirect Speech after a past reporting verb?",
+          correct: "then",
+          wrong: [
+            "yesterday",
+            "tomorrow",
+            "here"
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: Paul said, \"I will call you later.\"",
+          correct: "Paul said he would call me later.",
+          wrong: [
+            "Paul said he will call you later.",
+            "Paul said I would call me later.",
+            "Paul said he called me later."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Which reporting structure is grammatically accurate?",
+          correct: "Mia told us that she was late.",
+          wrong: [
+            "Mia said us that she was late.",
+            "Mia told that she was late.",
+            "Mia told to us she is late."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"Do you like music?\" asked Liam.",
+          correct: "Liam asked if I liked music.",
+          wrong: [
+            "Liam asked did I like music.",
+            "Liam asked if do I like music.",
+            "Liam asked that I liked music."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"Open the window,\" the teacher said.",
+          correct: "The teacher told us to open the window.",
+          wrong: [
+            "The teacher told us open the window.",
+            "The teacher said us to open the window.",
+            "The teacher told us opening the window."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"Don't touch that,\" Mom said.",
+          correct: "Mom told me not to touch that.",
+          wrong: [
+            "Mom told me to not touching that.",
+            "Mom said me don't touch that.",
+            "Mom told me didn't touch that."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "How does \"here\" typically shift in Indirect Speech when the location is distant?",
+          correct: "there",
+          wrong: [
+            "now",
+            "this",
+            "today"
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"Where do you live?\" asked Nora.",
+          correct: "Nora asked where I lived.",
+          wrong: [
+            "Nora asked where did I live.",
+            "Nora asked where do I live.",
+            "Nora asked if where I lived."
+          ]
+        }
+      ],
+
+      dificil: [
+        // --- PORTUGUÊS (10 questões) ---
+        {
+          subject: "Português",
+          q: "Analise a regência de 'assistir' no sentido de 'ajudar/prestar auxílio': qual frase segue a norma culta?",
+          correct: "A enfermeira assistiu o paciente durante a noite.",
+          wrong: [
+            "A enfermeira assistiu no paciente durante a noite.",
+            "A enfermeira assistiu pelo paciente durante a noite.",
+            "A enfermeira assistiu do paciente durante a noite."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa apresenta regência correta do verbo 'implicar' no sentido de 'acarretar/ter como consequência'?",
+          correct: "A falta de sono implica queda de rendimento.",
+          wrong: [
+            "A falta de sono implica em queda de rendimento.",
+            "A falta de sono implica na queda de rendimento.",
+            "A falta de sono implica com queda de rendimento."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual frase o verbo 'proceder' no sentido de 'dar início/realizar' está corretamente regido?",
+          correct: "A comissão procedeu à leitura da ata.",
+          wrong: [
+            "A comissão procedeu a leitura da ata.",
+            "A comissão procedeu na leitura da ata.",
+            "A comissão procedeu pela leitura da ata."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Assinale a frase em que ocorre crase corretamente por conta da regência verbal e nominal.",
+          correct: "Entreguei o relatório à coordenadora e fui fiel às normas.",
+          wrong: [
+            "Entreguei o relatório a coordenadora e fui fiel as normas.",
+            "Entreguei o relatório à coordenadora e fui fiel as normas.",
+            "Entreguei o relatório a coordenadora e fui fiel às normas."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual alternativa o verbo 'lembrar' está empregado na forma não pronominal com regência correta?",
+          correct: "Lembrei a data da prova aos colegas.",
+          wrong: [
+            "Lembrei da data da prova aos colegas.",
+            "Lembrei na data da prova aos colegas.",
+            "Lembrei pela data da prova aos colegas."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual frase apresenta regência nominal correta do adjetivo 'incompatível'?",
+          correct: "Essa justificativa é incompatível com os fatos.",
+          wrong: [
+            "Essa justificativa é incompatível dos fatos.",
+            "Essa justificativa é incompatível nos fatos.",
+            "Essa justificativa é incompatível sob os fatos."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Assinale a opção em que o substantivo 'aversão' apresenta regência nominal correta.",
+          correct: "Ele nutre aversão a injustiças.",
+          wrong: [
+            "Ele nutre aversão de injustiças.",
+            "Ele nutre aversão com injustiças.",
+            "Ele nutre aversão sob injustiças."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa apresenta regência nominal correta do adjetivo 'passível'?",
+          correct: "A decisão é passível de recurso.",
+          wrong: [
+            "A decisão é passível a recurso.",
+            "A decisão é passível com recurso.",
+            "A decisão é passível em recurso."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Em qual frase a regência nominal de 'alusão' está correta?",
+          correct: "O autor fez alusão ao episódio histórico.",
+          wrong: [
+            "O autor fez alusão do episódio histórico.",
+            "O autor fez alusão no episódio histórico.",
+            "O autor fez alusão pelo episódio histórico."
+          ]
+        },
+        {
+          subject: "Português",
+          q: "Qual alternativa apresenta regência nominal correta do adjetivo 'imune'?",
+          correct: "Nenhuma ideia é imune a críticas.",
+          wrong: [
+            "Nenhuma ideia é imune de críticas.",
+            "Nenhuma ideia é imune com críticas.",
+            "Nenhuma ideia é imune em críticas."
+          ]
+        },
+
+        // --- REDAÇÃO (10 questões) ---
+        {
+          subject: "Redação",
+          q: "Qual risco o autor de um artigo de divulgação científica deve evitar ao simplificar conceitos?",
+          correct: "Distorcer o conceito científico ou criar falsas certezas sem evidências.",
+          wrong: [
+            "Usar exemplos do cotidiano que facilitem a leitura.",
+            "Citar a universidade responsável pela pesquisa.",
+            "Dividir o texto em subtítulos organizados."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em um artigo de divulgação científica, qual é a função de apontar limitações de uma pesquisa?",
+          correct: "Mostrar rigor e honestidade intelectual sobre o que os dados ainda não provam.",
+          wrong: [
+            "Desqualificar completamente o trabalho dos cientistas.",
+            "Convencer o leitor de que a ciência não serve para nada.",
+            "Encher espaço porque faltou assunto para concluir."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Como uma pergunta de acompanhamento ('follow-up') melhora uma entrevista?",
+          correct: "Aprofunda um ponto vago ou interessante surgido na resposta anterior.",
+          wrong: [
+            "Muda bruscamente de assunto sem ouvir o entrevistado.",
+            "Repete exatamente a primeira pergunta palavra por palavra.",
+            "Encerra a conversa antes da resposta principal."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Na edição de uma entrevista, qual cuidado ético é indispensável ao apresentar a fala do entrevistado?",
+          correct: "Não alterar o sentido original das respostas nem atribuir falas inexistentes.",
+          wrong: [
+            "Trocar elogios por críticas para gerar polêmica.",
+            "Remover todas as explicações técnicas do especialista.",
+            "Assinar o texto como se o entrevistador tivesse respondido."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em uma fanfic, o que costuma gerar maior envolvimento dramático no enredo?",
+          correct: "Conflitos consistentes com as motivações dos personagens e consequências reais.",
+          wrong: [
+            "Soluções mágicas instantâneas sem nenhum esforço dos personagens.",
+            "Personagens que mudam de personalidade a cada parágrafo sem motivo.",
+            "Ausência de qualquer obstáculo ou escolha difícil."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual é a diferença entre 'canon-compliant' e 'canon divergence' em fanfic?",
+          correct: "O primeiro respeita os fatos da obra original; o segundo altera um ponto e muda o rumo.",
+          wrong: [
+            "Ambos proíbem o uso de personagens da obra original.",
+            "O primeiro é escrito em prosa e o segundo apenas em gráficos.",
+            "O segundo é a versão oficial publicada pela editora original."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Como a escolha do foco narrativo (1ª ou 3ª pessoa) influencia uma fanfic?",
+          correct: "Define o acesso do leitor aos pensamentos, percepções e pontos de vista.",
+          wrong: [
+            "Altera apenas o tamanho da fonte usada no navegador.",
+            "Impede que existam diálogos entre os personagens.",
+            "Determina o número exato de capítulos obrigatórios."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em um artigo de divulgação científica, qual estratégia ajuda a evitar o tom sensacionalista?",
+          correct: "Apresentar resultados com precisão, evitando exageros ou curas milagrosas.",
+          wrong: [
+            "Usar pontos de exclamação em todas as frases do título.",
+            "Prometer resultados definitivos a partir de testes preliminares.",
+            "Ocultar os métodos usados no estudo."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Em uma entrevista, por que o contexto do entrevistado (formação, atuação ou vivência) é relevante?",
+          correct: "Ajuda o leitor a compreender o lugar de fala e a autoridade sobre o tema.",
+          wrong: [
+            "Serve apenas para preencher linhas no topo da página.",
+            "Dispensa a necessidade de fazer boas perguntas.",
+            "Garante que o entrevistado concorde com tudo."
+          ]
+        },
+        {
+          subject: "Redação",
+          q: "Qual prática torna a leitura de uma fanfic mais fluida e envolvente para outros leitores?",
+          correct: "Revisar ortografia, pontuação, ritmo narrativo e transições entre cenas.",
+          wrong: [
+            "Escrever todo o texto em letras maiúsculas sem parágrafos.",
+            "Misturar dez idiomas diferentes na mesma frase.",
+            "Deixar pontas soltas propositais em todas as cenas."
+          ]
+        },
+
+        // --- INGLÊS (10 questões) ---
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: Lucas said, \"I visited the museum yesterday.\"",
+          correct: "Lucas said he had visited the museum the day before.",
+          wrong: [
+            "Lucas said he visited the museum yesterday.",
+            "Lucas said he has visited the museum the next day.",
+            "Lucas said I had visited the museum before."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"I will meet you tomorrow,\" Emma said.",
+          correct: "Emma said she would meet me the next day.",
+          wrong: [
+            "Emma said she will meet you tomorrow.",
+            "Emma said she would meet me yesterday.",
+            "Emma said I would meet her the next day."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "When reporting a universal scientific fact, what is often acceptable regarding tense backshifting?",
+          correct: "Keeping the present tense because the fact still holds true.",
+          wrong: [
+            "Always using the future perfect passive voice.",
+            "Removing the main verb from the reported clause.",
+            "Replacing the subject with a question tag."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"Why didn't you come to the meeting?\" asked Daniel.",
+          correct: "Daniel asked why I hadn't come to the meeting.",
+          wrong: [
+            "Daniel asked why didn't I come to the meeting.",
+            "Daniel asked if why I hadn't come to the meeting.",
+            "Daniel asked why I haven't came to the meeting."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"I must finish this report today,\" said Sofia.",
+          correct: "Sofia said she had to finish that report that day.",
+          wrong: [
+            "Sofia said she must finished this report today.",
+            "Sofia said I had to finish that report that day.",
+            "Sofia said she has to finish this report today."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Which structure best reports a polite request: \"Please help me with this bag,\" asked Noah.",
+          correct: "Noah asked me to help him with that bag.",
+          wrong: [
+            "Noah asked me help him with this bag.",
+            "Noah said me to help him with that bag.",
+            "Noah asked that I helping him with that bag."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"We had already left when she arrived,\" said Thiago.",
+          correct: "Thiago said they had already left when she had arrived.",
+          wrong: [
+            "Thiago said we have already left when she arrives.",
+            "Thiago said they already leave when she arrived.",
+            "Thiago said they had already left when she arrives."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Change to Indirect Speech: \"Could you pass the salt?\" asked Beatriz.",
+          correct: "Beatriz asked me to pass the salt.",
+          wrong: [
+            "Beatriz asked if could I passed the salt.",
+            "Beatriz asked me passing the salt.",
+            "Beatriz said me could pass the salt."
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Which pair correctly shows demonstrative and time shifts in Indirect Speech?",
+          correct: "these → those / ago → before",
+          wrong: [
+            "those → these / before → ago",
+            "this → this / today → tomorrow",
+            "that → these / yesterday → now"
+          ]
+        },
+        {
+          subject: "Inglês",
+          q: "Convert accurately to Indirect Speech: \"I might join the club,\" said Rafael.",
+          correct: "Rafael said he might join the club.",
+          wrong: [
+            "Rafael said he may joined the club.",
+            "Rafael said I might join the club.",
+            "Rafael said he mights join the club."
+          ]
+        }
+      ]
+    };
+
+    // ==================== ESTADO DO JOGO ====================
+    let currentDifficulty = 'facil';
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let currentCorrectOptionIndex = -1;
+    let isLocked = false;
+    let practiceMode = false;
+    let soundEnabled = true;
+
+    // Contadores de desempenho
+    let hitsCount = 0;
+    let subjectHits = { "Português": 0, "Redação": 0, "Inglês": 0 };
+
+    // ==================== SISTEMA DE ÁUDIO (TONE.JS) ====================
+    let synth = null;
+    function initAudio() {
+      if (!synth && typeof Tone !== 'undefined') {
+        synth = new Tone.PolySynth(Tone.Synth).toDestination();
+        synth.volume.value = -8;
+      }
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        const now = Tone.now();
+        if (type === 'click') {
+          synth.triggerAttackRelease("C5", "32n", now);
+        } else if (type === 'correct') {
+          synth.triggerAttackRelease(["E5", "G5", "C6"], "16n", now);
+        } else if (type === 'wrong') {
+          synth.triggerAttackRelease(["F3", "E3"], "8n", now);
+        } else if (type === 'victory') {
+          synth.triggerAttackRelease("C5", "16n", now);
+          synth.triggerAttackRelease("E5", "16n", now + 0.12);
+          synth.triggerAttackRelease("G5", "16n", now + 0.24);
+          synth.triggerAttackRelease("C6", "4n", now + 0.36);
+        }
+      } catch (e) {
+        // Ignora falha silenciosamente caso bloqueado pelo navegador
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('icon-sound-on').classList.toggle('hidden', !soundEnabled);
+      document.getElementById('icon-sound-off').classList.toggle('hidden', soundEnabled);
+      if (soundEnabled) playSound('click');
+    }
+
+    function togglePracticeMode() {
+      practiceMode = !practiceMode;
+      const indicator = document.getElementById('practice-indicator');
+      const statusText = document.getElementById('practice-status-text');
+      if (practiceMode) {
+        indicator.classList.remove('bg-slate-300');
+        indicator.classList.add('bg-emerald-500');
+        statusText.textContent = 'ON';
+        statusText.classList.add('text-emerald-600');
+      } else {
+        indicator.classList.add('bg-slate-300');
+        indicator.classList.remove('bg-emerald-500');
+        statusText.textContent = 'OFF';
+        statusText.classList.remove('text-emerald-600');
+      }
+      playSound('click');
+    }
+
+    // ==================== UTILITÁRIO DE EMBARALHAMENTO ====================
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // ==================== NAVEGAÇÃO ENTRE TELAS ====================
+    function showScreen(screenId) {
+      ['screen-home', 'screen-game', 'screen-victory'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      });
+      const target = document.getElementById(screenId);
+      target.classList.remove('hidden');
+      target.classList.add('flex');
+    }
+
+    function startGame(difficulty) {
+      playSound('click');
+      currentDifficulty = difficulty;
+      currentIndex = 0;
+      hitsCount = 0;
+      subjectHits = { "Português": 0, "Redação": 0, "Inglês": 0 };
+      isLocked = false;
+
+      // Mantém a ordem das 30 questões (10 Português -> 10 Redação -> 10 Inglês)
+      currentQuestions = QUIZ_BANK[difficulty].map(item => ({ ...item }));
+
+      // Atualiza badge de dificuldade
+      const diffNames = { facil: 'Fácil', medio: 'Médio', dificil: 'Difícil' };
+      const diffBadge = document.getElementById('difficulty-badge');
+      diffBadge.textContent = diffNames[difficulty];
+      diffBadge.className = "px-2 py-0.5 rounded-lg border-2 border-slate-900 text-[11px] sm:text-xs font-extrabold uppercase " +
+        (difficulty === 'facil' ? 'bg-emerald-200 text-emerald-950' :
+         difficulty === 'medio' ? 'bg-amber-200 text-amber-950' :
+         'bg-rose-200 text-rose-950');
+
+      document.getElementById('modal-gameover').classList.add('hidden');
+      document.getElementById('modal-gameover').classList.remove('flex');
+      document.getElementById('modal-confirm-menu').classList.add('hidden');
+      document.getElementById('modal-confirm-menu').classList.remove('flex');
+
+      showScreen('screen-game');
+      renderQuestion();
+    }
+
+    function restartCurrentLevel() {
+      startGame(currentDifficulty);
+    }
+
+    function confirmReturnMenu() {
+      playSound('click');
+      const modal = document.getElementById('modal-confirm-menu');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeConfirmMenu() {
+      playSound('click');
+      const modal = document.getElementById('modal-confirm-menu');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function goToMenu() {
+      playSound('click');
+      document.getElementById('modal-gameover').classList.add('hidden');
+      document.getElementById('modal-gameover').classList.remove('flex');
+      document.getElementById('modal-confirm-menu').classList.add('hidden');
+      document.getElementById('modal-confirm-menu').classList.remove('flex');
+      showScreen('screen-home');
+    }
+
+    // ==================== RENDERIZAÇÃO DA QUESTÃO ====================
+    function renderQuestion() {
+      isLocked = false;
+      const qObj = currentQuestions[currentIndex];
+      const questionNumber = currentIndex + 1;
+      const blockNumber = (currentIndex % 10) + 1;
+
+      // Atualiza topo
+      document.getElementById('question-number-badge').textContent = questionNumber;
+      document.getElementById('progress-text').textContent = `Questão ${questionNumber} de 30 • ${qObj.subject} (${blockNumber}/10)`;
+      document.getElementById('hud-hits').textContent = hitsCount;
+
+      // Barra de progresso
+      const pct = ((questionNumber) / 30) * 100;
+      document.getElementById('progress-bar').style.width = `${pct}%`;
+
+      // Estilo da matéria
+      const subBadge = document.getElementById('subject-badge');
+      subBadge.textContent = qObj.subject;
+      if (qObj.subject === "Português") {
+        subBadge.className = "px-2.5 py-0.5 rounded-lg border-2 border-slate-900 text-xs sm:text-sm font-extrabold uppercase tracking-wide bg-blue-200 text-blue-950";
+      } else if (qObj.subject === "Redação") {
+        subBadge.className = "px-2.5 py-0.5 rounded-lg border-2 border-slate-900 text-xs sm:text-sm font-extrabold uppercase tracking-wide bg-amber-200 text-amber-950";
+      } else {
+        subBadge.className = "px-2.5 py-0.5 rounded-lg border-2 border-slate-900 text-xs sm:text-sm font-extrabold uppercase tracking-wide bg-purple-200 text-purple-950";
+      }
+
+      // Enunciado
+      document.getElementById('question-text').textContent = qObj.q;
+
+      // Embaralha as 4 alternativas (1 correta + 3 erradas)
+      const optionsList = [
+        { text: qObj.correct, isCorrect: true },
+        { text: qObj.wrong[0], isCorrect: false },
+        { text: qObj.wrong[1], isCorrect: false },
+        { text: qObj.wrong[2], isCorrect: false }
+      ];
+      const shuffled = shuffleArray(optionsList);
+
+      // Preenche os 4 retângulos alinhados
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById(`opt-${i}`);
+        btn.textContent = shuffled[i].text;
+        btn.disabled = false;
+        btn.className = "option-card rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm md:text-base lg:text-lg font-extrabold text-slate-800 leading-tight";
+        if (shuffled[i].isCorrect) {
+          currentCorrectOptionIndex = i;
+        }
+      }
+    }
+
+    // ==================== LÓGICA DE RESPOSTA ====================
+    function handleAnswer(selectedIndex) {
+      if (isLocked) return;
+      isLocked = true;
+
+      const selectedBtn = document.getElementById(`opt-${selectedIndex}`);
+      const correctBtn = document.getElementById(`opt-${currentCorrectOptionIndex}`);
+      const qObj = currentQuestions[currentIndex];
+
+      // Desabilita todos os botões temporariamente
+      for (let i = 0; i < 4; i++) {
+        document.getElementById(`opt-${i}`).disabled = true;
+      }
+
+      if (selectedIndex === currentCorrectOptionIndex) {
+        // RESPOSTA CORRETA
+        playSound('correct');
+        selectedBtn.classList.add('option-correct');
+        hitsCount++;
+        subjectHits[qObj.subject]++;
+        document.getElementById('hud-hits').textContent = hitsCount;
+
+        setTimeout(() => {
+          nextStep();
+        }, 650);
+      } else {
+        // RESPOSTA ERRADA
+        playSound('wrong');
+        selectedBtn.classList.add('option-wrong', 'animate-shake');
+        correctBtn.classList.add('option-correct');
+
+        if (practiceMode) {
+          // No Modo Treino, mostra a correta e avança para a próxima
+          setTimeout(() => {
+            nextStep();
+          }, 1350);
+        } else {
+          // No Modo Clássico Gênio Quiz, abre tela de "Você errou!"
+          setTimeout(() => {
+            showGameOverModal(qObj.correct);
+          }, 750);
+        }
+      }
+    }
+
+    function nextStep() {
+      currentIndex++;
+      if (currentIndex < currentQuestions.length) {
+        renderQuestion();
+      } else {
+        showVictoryScreen();
+      }
+    }
+
+    function showGameOverModal(correctText) {
+      const modal = document.getElementById('modal-gameover');
+      document.getElementById('gameover-detail').textContent =
+        `Você errou na questão ${currentIndex + 1} de 30 (${currentQuestions[currentIndex].subject}).`;
+      document.getElementById('gameover-correct-answer').textContent = correctText;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function showVictoryScreen() {
+      playSound('victory');
+      const diffNames = { facil: 'Fácil', medio: 'Médio', dificil: 'Difícil' };
+      document.getElementById('victory-subtitle').textContent =
+        `Você concluiu as 30 questões do nível ${diffNames[currentDifficulty]} com ${hitsCount} acerto(s)!`;
+
+      document.getElementById('vic-port').textContent = `${subjectHits["Português"]}/10`;
+      document.getElementById('vic-red').textContent = `${subjectHits["Redação"]}/10`;
+      document.getElementById('vic-ing').textContent = `${subjectHits["Inglês"]}/10`;
+
+      showScreen('screen-victory');
+    }
+  </script>
+</body>
+</html>
+```
